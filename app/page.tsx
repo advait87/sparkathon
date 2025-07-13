@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -14,10 +14,20 @@ import { SettingsPanel } from "@/components/settings-panel"
 import { StoreMapPage } from "@/components/pages/store-map-page"
 import { WarRoomPage } from "@/components/pages/war-room-page"
 import { ForecastingPage } from "@/components/pages/forecasting-page"
+import { ChatbotTest } from "@/components/chatbot-test"
 
 export default function Dashboard() {
   const [activeView, setActiveView] = useState("overview")
   const [darkMode, setDarkMode] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleGlobalRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    // Add a small delay to show the loading state
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Force refresh by triggering a page reload or custom refresh logic
+    window.location.reload()
+  }, [])
 
   const renderContent = () => {
     switch (activeView) {
@@ -32,6 +42,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <KPIBar />
             <SettingsPanel />
+            <ChatbotTest />
           </div>
         )
       default:
@@ -75,7 +86,10 @@ export default function Dashboard() {
         />
         <SidebarInset>
           <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-            <DashboardHeader />
+            <DashboardHeader
+              onRefresh={handleGlobalRefresh}
+              isRefreshing={isRefreshing}
+            />
             <main className="p-4 space-y-6">{renderContent()}</main>
           </div>
         </SidebarInset>

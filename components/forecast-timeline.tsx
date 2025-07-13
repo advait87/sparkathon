@@ -14,21 +14,21 @@ export function ForecastTimeline() {
   const [selectedChannel, setSelectedChannel] = useState("all")
 
   const baseData = [
-    { day: "Mon", electronics: 85, groceries: 120, apparel: 65, weather: "sunny", events: [] },
-    { day: "Tue", electronics: 92, groceries: 115, apparel: 70, weather: "cloudy", events: ["Local Festival"] },
-    { day: "Wed", electronics: 78, groceries: 140, apparel: 55, weather: "rainy", events: [] },
-    { day: "Thu", electronics: 105, groceries: 95, apparel: 80, weather: "rainy", events: [] },
-    { day: "Fri", electronics: 130, groceries: 110, apparel: 95, weather: "sunny", events: ["Payday"] },
-    { day: "Sat", electronics: 145, groceries: 160, apparel: 120, weather: "sunny", events: ["Weekend Rush"] },
-    { day: "Sun", electronics: 110, groceries: 135, apparel: 85, weather: "cloudy", events: [] },
+    { day: "Mon", sports: 85, travel: 45, essentials: 120, weather: "sunny", events: [] },
+    { day: "Tue", sports: 92, travel: 38, essentials: 115, weather: "cloudy", events: ["Cricket Match"] },
+    { day: "Wed", sports: 25, travel: 15, essentials: 140, weather: "rainy", events: ["Monsoon Alert"] },
+    { day: "Thu", sports: 105, travel: 42, essentials: 95, weather: "rainy", events: [] },
+    { day: "Fri", sports: 130, travel: 55, essentials: 110, weather: "sunny", events: ["Weekend Prep"] },
+    { day: "Sat", sports: 145, travel: 65, essentials: 160, weather: "sunny", events: ["Weekend Rush"] },
+    { day: "Sun", sports: 110, travel: 48, essentials: 135, weather: "cloudy", events: [] },
   ]
 
   // Adjust data based on scenario slider
   const adjustedData = baseData.map((item) => ({
     ...item,
-    electronics: Math.round(item.electronics * (0.5 + scenarioValue[0] / 100)),
-    groceries: Math.round(item.groceries * (0.5 + scenarioValue[0] / 100)),
-    apparel: Math.round(item.apparel * (0.5 + scenarioValue[0] / 100)),
+    sports: Math.round(item.sports * (0.5 + scenarioValue[0] / 100)),
+    travel: Math.round(item.travel * (0.5 + scenarioValue[0] / 100)),
+    essentials: Math.round(item.essentials * (0.5 + scenarioValue[0] / 100)),
   }))
 
   const weatherIcons = {

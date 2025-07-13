@@ -5,18 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MapPin, Store, Warehouse, TrendingUp } from "lucide-react"
+import { MapPin, Store, Warehouse, TrendingUp, Loader2, RefreshCw } from "lucide-react"
+import { useStores } from "@/hooks/use-dashboard-data"
+import { config } from "@/lib/config"
 
 export function GeoMapSection() {
   const [selectedStore, setSelectedStore] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<"dark" | "fulfillment">("dark")
 
-  const stores = [
+  const { data: stores, loading, error, lastUpdated, refresh } = useStores({
+    refreshInterval: config.realtime.storeRefreshInterval,
+    enabled: config.features.enableRealtime
+  })
+
+  // Fallback data for when API is not available
+  const fallbackStores = [
     {
       id: "1",
       name: "Store #4521",
-      type: "dark",
-      status: "critical",
+      type: "dark" as const,
+      status: "critical" as const,
       demand: 95,
       stock: 23,
       lat: 40.7128,
@@ -25,8 +33,8 @@ export function GeoMapSection() {
     {
       id: "2",
       name: "Store #4522",
-      type: "dark",
-      status: "warning",
+      type: "dark" as const,
+      status: "warning" as const,
       demand: 78,
       stock: 45,
       lat: 40.7589,
@@ -35,19 +43,19 @@ export function GeoMapSection() {
     {
       id: "3",
       name: "FC Dallas",
-      type: "fulfillment",
-      status: "good",
+      type: "fulfillment" as const,
+      status: "good" as const,
       demand: 65,
       stock: 87,
       lat: 32.7767,
       lng: -96.797,
     },
-    { id: "4", name: "Store #4523", type: "dark", status: "good", demand: 45, stock: 92, lat: 40.6782, lng: -73.9442 },
+    { id: "4", name: "Store #4523", type: "dark" as const, status: "good" as const, demand: 45, stock: 92, lat: 40.6782, lng: -73.9442 },
     {
       id: "5",
       name: "FC Atlanta",
-      type: "fulfillment",
-      status: "warning",
+      type: "fulfillment" as const,
+      status: "warning" as const,
       demand: 82,
       stock: 34,
       lat: 33.749,
@@ -56,8 +64,8 @@ export function GeoMapSection() {
     {
       id: "6",
       name: "Store #4524",
-      type: "dark",
-      status: "critical",
+      type: "dark" as const,
+      status: "critical" as const,
       demand: 98,
       stock: 12,
       lat: 40.7505,
@@ -65,7 +73,9 @@ export function GeoMapSection() {
     },
   ]
 
-  const filteredStores = stores.filter((store) =>
+  const displayStores = stores || fallbackStores
+
+  const filteredStores = displayStores.filter((store) =>
     viewMode === "dark" ? store.type === "dark" : store.type === "fulfillment",
   )
 
@@ -99,22 +109,46 @@ export function GeoMapSection() {
     <Card className="glass-card border-0 shadow-lg">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Live Store Network
-          </CardTitle>
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "dark" | "fulfillment")}>
-            <TabsList>
-              <TabsTrigger value="dark" className="flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                Dark Stores
-              </TabsTrigger>
-              <TabsTrigger value="fulfillment" className="flex items-center gap-2">
-                <Warehouse className="h-4 w-4" />
-                Fulfillment Centers
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Live Store Network
+            </CardTitle>
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+            {error && (
+              <Badge variant="destructive" className="text-xs">
+                API Error
+              </Badge>
+            )}
+            {!loading && !error && config.ui.showLastUpdated && lastUpdated && (
+              <Badge variant="outline" className="text-xs">
+                Updated {new Date(lastUpdated).toLocaleTimeString()}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refresh}
+              disabled={loading}
+              className="h-8"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "dark" | "fulfillment")}>
+              <TabsList>
+                <TabsTrigger value="dark" className="flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  Dark Stores ({displayStores.filter(s => s.type === "dark").length})
+                </TabsTrigger>
+                <TabsTrigger value="fulfillment" className="flex items-center gap-2">
+                  <Warehouse className="h-4 w-4" />
+                  Fulfillment Centers ({displayStores.filter(s => s.type === "fulfillment").length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </CardHeader>
 
@@ -212,6 +246,15 @@ export function GeoMapSection() {
             </div>
           </div>
         </div>
+
+        {/* Error message */}
+        {error && config.ui.showErrorMessages && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-sm text-red-700">
+              Unable to fetch real-time store data: {error}. Showing cached data.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

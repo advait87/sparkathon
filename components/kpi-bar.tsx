@@ -2,10 +2,19 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, AlertTriangle, Clock, Target } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { TrendingUp, TrendingDown, AlertTriangle, Clock, Target, Loader2, RefreshCw } from "lucide-react"
+import { useKPIs } from "@/hooks/use-dashboard-data"
+import { config } from "@/lib/config"
 
 export function KPIBar() {
-  const kpis = [
+  const { data: kpis, loading, error, lastUpdated, refresh } = useKPIs({
+    refreshInterval: config.realtime.kpiRefreshInterval,
+    enabled: config.features.enableRealtime
+  })
+
+  // Fallback data for when API is not available
+  const fallbackKpis = [
     {
       title: "SKUs in Danger Zone",
       value: "247",
@@ -14,17 +23,17 @@ export function KPIBar() {
       icon: AlertTriangle,
       color: "text-red-600",
       bgColor: "bg-red-50",
-      type: "ring",
+      type: "ring" as const,
     },
     {
       title: "Fill Rate vs Forecast",
       value: "94.2%",
       change: "+2.1%",
-      trend: "up",
+      trend: "up" as const,
       icon: TrendingUp,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      type: "sparkline",
+      type: "sparkline" as const,
     },
     {
       title: "Urgent Alerts",
@@ -32,7 +41,7 @@ export function KPIBar() {
       icon: AlertTriangle,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
-      type: "badge",
+      type: "badge" as const,
     },
     {
       title: "Avg Restock Lead Time",
@@ -42,7 +51,7 @@ export function KPIBar() {
       icon: Clock,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      type: "metric",
+      type: "metric" as const,
     },
     {
       title: "Forecast Confidence",
@@ -50,25 +59,56 @@ export function KPIBar() {
       icon: Target,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      type: "percentage",
+      type: "percentage" as const,
     },
   ]
 
+  const displayKpis = kpis || fallbackKpis
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      {kpis.map((kpi, index) => (
-        <Card key={index} className="glass-card border-0 shadow-lg">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className={`p-2 rounded-lg ${kpi.bgColor}`}>
-                <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+    <div className="space-y-4">
+      {/* Header with refresh controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Key Performance Indicators</h2>
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-blue-500" />}
+          {error && (
+            <Badge variant="destructive" className="text-xs">
+              API Error
+            </Badge>
+          )}
+          {!loading && !error && config.ui.showLastUpdated && lastUpdated && (
+            <Badge variant="outline" className="text-xs">
+              Updated {new Date(lastUpdated).toLocaleTimeString()}
+            </Badge>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refresh}
+          disabled={loading}
+          className="h-8"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {displayKpis.map((kpi, index) => (
+          <Card key={index} className={`glass-card border-0 shadow-lg transition-opacity ${loading ? 'opacity-70' : 'opacity-100'}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`p-2 rounded-lg ${kpi.bgColor}`}>
+                  <kpi.icon className={`h-4 w-4 ${kpi.color}`} />
+                </div>
+                {kpi.type === "badge" && (
+                  <Badge variant="destructive" className="animate-pulse">
+                    {kpi.value}
+                  </Badge>
+                )}
               </div>
-              {kpi.type === "badge" && (
-                <Badge variant="destructive" className="animate-pulse">
-                  {kpi.value}
-                </Badge>
-              )}
-            </div>
 
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-medium">{kpi.title}</p>
@@ -144,6 +184,16 @@ export function KPIBar() {
           </CardContent>
         </Card>
       ))}
+      </div>
+
+      {/* Error message */}
+      {error && config.ui.showErrorMessages && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-sm text-red-700">
+            Unable to fetch real-time data: {error}. Showing cached data.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
